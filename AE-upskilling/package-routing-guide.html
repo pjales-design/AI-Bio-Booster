@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Package Routing Guide — Thumbtack AE Reference</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* Field Notebook system */
+    --ink:             #2F3033;
+    --ink-soft:        #4B5563;
+    --ink-muted:       #6B7280;
+    --ink-faint:       #9CA3AF;
+    --accent:          #009FD9;
+    --accent-deep:     #007FAD;
+    --accent-soft:     #B2EBFF;
+    --accent-bg:       #EAF6FA;
+    --rule:            #E5E7EB;
+    --rule-soft:       #F3F4F6;
+    --surface:         #FFFFFF;
+    --bg:              #EAF6FA;
+
+    /* Tier palette — Thumbtack brand hues, avoiding reserved
+       accent-blue (decisions) and yellow #FFDD80 (captured evidence).
+       Ascending progression: Gray → Green → Indigo → Purple. */
+    --base:            #6B7280;   /* neutral gray */
+    --base-light:      #F9FAFB;
+    --base-mid:        #E5E7EB;
+    --plus:            #16855B;   /* Green 500 */
+    --plus-light:      #E1FDF3;   /* Green 100 */
+    --plus-mid:        #73E4A2;   /* Green 300 */
+    --premium:         #4F54B2;   /* Indigo 500 */
+    --premium-light:   #E8F1FD;   /* Indigo 100 */
+    --premium-mid:     #96C2FF;   /* Indigo 300 */
+    --enterprise:      #6637B6;   /* Purple 500 */
+    --enterprise-light:#F5EFFF;   /* Purple 100 */
+    --enterprise-mid:  #C9ACFD;   /* Purple 300 */
+
+    /* Legacy aliases */
+    --text:            #2F3033;
+    --muted:           #6B7280;
+    --border:          #E5E7EB;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 13px;
+    color: var(--text);
+    background: var(--bg);
+    min-height: 100vh;
+  }
+
+  /* ── PAGE HEADER ── */
+  .page-header {
+    background: var(--surface);
+    color: var(--ink);
+    padding: 18px 28px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--rule);
+  }
+  .page-header-brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .page-header-icon {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    color: var(--ink);
+  }
+  .page-header-icon svg { width: 100%; height: 100%; display: block; }
+  .page-header h1 { font-size: 18px; font-weight: 800; letter-spacing: -0.3px; color: var(--ink); }
+  .page-header .sub { font-size: 11px; color: var(--ink-muted); margin-top: 2px; font-weight: 500; }
+  .page-header .meta { font-size: 11px; color: var(--ink-faint); text-align: right; line-height: 1.7; font-weight: 500; }
+
+  /* ── TAB BAR ── */
+  .tab-bar {
+    background: var(--surface);
+    display: flex;
+    gap: 2px;
+    padding: 0 28px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .tab {
+    padding: 12px 18px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink-muted);
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -1px;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .tab:hover { color: var(--ink); }
+  .tab.active { color: var(--ink); border-bottom-color: var(--accent); }
+
+  /* ── NEW CALL BUTTON ── */
+  .new-call-bar {
+    background: transparent;
+    padding: 12px 28px 0;
+    display: flex;
+    justify-content: flex-end;
+  }
+  #new-call-btn {
+    background: var(--surface);
+    color: var(--ink);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 7px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s;
+    letter-spacing: 0;
+  }
+  #new-call-btn:hover { background: var(--rule-soft); border-color: var(--ink-faint); }
+  #new-call-btn .dot {
+    width: 6px; height: 6px;
+    background: var(--ink-faint);
+    border-radius: 50%;
+    transition: background 0.15s, opacity 0.15s;
+  }
+
+  /* ── Active state — becomes prominent when selections exist to clear ── */
+  body:has(.dim-block.has-selection) #new-call-btn {
+    background: var(--ink);
+    color: var(--surface);
+    border-color: var(--ink);
+    font-weight: 700;
+  }
+  body:has(.dim-block.has-selection) #new-call-btn:hover {
+    background: #1A1B1D;
+    border-color: #1A1B1D;
+  }
+  body:has(.dim-block.has-selection) #new-call-btn .dot {
+    background: var(--surface);
+    opacity: 0.7;
+  }
+
+  /* ── CONTENT PANELS ── */
+  .panel { display: none; padding: 20px 28px 32px; }
+  .panel.active { display: block; }
+
+  /* ════════════════════════════════════
+     BUILDER TAB
+  ════════════════════════════════════ */
+  .builder-layout {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 18px;
+    align-items: start;
+    max-width: 1060px;
+    margin: 0 auto;
+  }
+
+  /* ── DIM BLOCKS ── */
+  .dim-block {
+    background: white;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 10px;
+    transition: border-color 0.2s;
+  }
+  .dim-block.has-selection { border-color: #9CA3AF; }
+
+  .dim-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: #F9FAFB;
+    border-bottom: 1px solid var(--border);
+  }
+  .dim-num {
+    background: #2F3033;
+    color: white;
+    border-radius: 50%;
+    width: 22px; height: 22px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; flex-shrink: 0;
+    transition: background 0.2s;
+  }
+  .dim-block.has-selection .dim-num { background: #009FD9; }
+  .dim-name { font-size: 13px; font-weight: 700; }
+  .dim-q { font-size: 11px; color: var(--muted); font-style: italic; margin-left: auto; }
+
+  .signal-btn-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    padding: 12px 14px 0;
+  }
+
+  .sig-btn {
+    background: #F9FAFB;
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    padding: 7px 13px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    user-select: none;
+    text-align: left;
+  }
+  .sig-btn:hover { border-color: #9CA3AF; background: #F3F4F6; }
+
+  /* ── D1 first-touch nudge — the three Current Business State buttons
+     carry an accent-blue halo until the learner clicks one. Once D1 has a
+     selection, the halo disappears here and never reappears elsewhere. ── */
+  #dim-1:not(.has-selection) .sig-btn {
+    border-color: var(--accent-soft);
+    box-shadow: 0 0 0 3px rgba(0, 159, 217, 0.10);
+  }
+  #dim-1:not(.has-selection) .sig-btn:hover {
+    border-color: var(--accent);
+    background: var(--accent-bg);
+    box-shadow: 0 0 0 3px rgba(0, 159, 217, 0.18);
+  }
+
+  /* Package indicator pills on unselected buttons */
+  .sig-pkg-indicators {
+    display: flex;
+    gap: 3px;
+    flex-shrink: 0;
+  }
+  .spi {
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    opacity: 0.7;
+  }
+  .spi-base       { background: var(--base-light);       color: var(--base);       border: 1px solid var(--base-mid); }
+  .spi-plus       { background: var(--plus-light);       color: var(--plus);       border: 1px solid var(--plus-mid); }
+  .spi-premium    { background: var(--premium-light);    color: var(--premium);    border: 1px solid var(--premium-mid); }
+  .spi-enterprise { background: var(--enterprise-light); color: var(--enterprise); border: 1px solid var(--enterprise-mid); }
+
+  /* Selected state */
+  .sig-btn.selected {
+    border-color: #2F3033;
+    background: #2F3033;
+    color: white;
+    font-weight: 600;
+  }
+  .sig-btn.selected .sig-pkg-indicators { display: none; }
+
+  /* Reveal row — appears after selection */
+  .signal-reveal {
+    display: none;
+    margin: 8px 14px 12px;
+    background: var(--surface);
+    border: 1px solid var(--accent-soft);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 10px 12px;
+    gap: 10px;
+  }
+  .signal-reveal.visible { display: flex; }
+  .reveal-arrow {
+    font-size: 16px;
+    color: var(--accent);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .reveal-body { flex: 1; }
+  .reveal-pkg-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 5px;
+    flex-wrap: wrap;
+  }
+  .reveal-pkg-row .rl {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .rev-badge {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 5px;
+  }
+  .rev-base       { background: var(--base-light);       color: var(--base);       border: 1.5px solid var(--base-mid); }
+  .rev-plus       { background: var(--plus-light);       color: var(--plus);       border: 1.5px solid var(--plus-mid); }
+  .rev-premium    { background: var(--premium-light);    color: var(--premium);    border: 1.5px solid var(--premium-mid); }
+  .rev-enterprise { background: var(--enterprise-light); color: var(--enterprise); border: 1.5px solid var(--enterprise-mid); }
+  .reveal-why {
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    line-height: 1.4;
+  }
+
+  /* Gap note */
+  .gap-note-row {
+    margin: 8px 14px 12px;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-left: 3px solid #D97706;
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    display: flex;
+    gap: 8px;
+  }
+
+  /* ── RIGHT PANEL ── */
+  .right-panel {
+    position: sticky;
+    top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Signal log */
+  .signal-log-card {
+    background: white;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .card-header {
+    background: #F9FAFB;
+    border-bottom: 1px solid var(--border);
+    padding: 10px 14px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .log-entries {
+    padding: 8px 14px;
+    min-height: 60px;
+  }
+  .log-empty {
+    color: #D1D5DB;
+    font-style: italic;
+    font-size: 12px;
+    padding: 8px 0;
+  }
+  .log-entry {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid #F3F4F6;
+    animation: fadeIn 0.2s ease;
+  }
+  .log-entry:last-child { border-bottom: none; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+  .log-dim {
+    background: #2F3033;
+    color: white;
+    border-radius: 50%;
+    width: 18px; height: 18px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; font-weight: 700; flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .log-text { flex: 1; font-size: 11.5px; color: var(--text); line-height: 1.3; }
+  .log-pkgs { display: flex; gap: 3px; flex-shrink: 0; margin-top: 2px; }
+  .lp {
+    font-size: 9px; font-weight: 700;
+    padding: 2px 5px; border-radius: 3px;
+    text-transform: uppercase; letter-spacing: 0.3px;
+  }
+  .lp-base       { background: var(--base-light);       color: var(--base);       border: 1px solid var(--base-mid); }
+  .lp-plus       { background: var(--plus-light);       color: var(--plus);       border: 1px solid var(--plus-mid); }
+  .lp-premium    { background: var(--premium-light);    color: var(--premium);    border: 1px solid var(--premium-mid); }
+  .lp-enterprise { background: var(--enterprise-light); color: var(--enterprise); border: 1px solid var(--enterprise-mid); }
+
+  /* Score bar */
+  .score-card {
+    background: white;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .score-bars { padding: 12px 14px; }
+  .score-row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 8px;
+  }
+  .score-row:last-child { margin-bottom: 0; }
+  .score-label { font-size: 11px; font-weight: 700; width: 68px; flex-shrink: 0; }
+  .sl-base       { color: var(--base); }
+  .sl-plus       { color: var(--plus); }
+  .sl-premium    { color: var(--premium); }
+  .sl-enterprise { color: var(--enterprise); }
+  .score-track { flex: 1; height: 10px; background: #F3F4F6; border-radius: 5px; overflow: hidden; }
+  .score-fill { height: 100%; border-radius: 5px; transition: width 0.35s ease; }
+  .sf-base       { background: var(--base); }
+  .sf-plus       { background: var(--plus); }
+  .sf-premium    { background: var(--premium); }
+  .sf-enterprise { background: var(--enterprise); }
+  .score-num { font-size: 12px; font-weight: 700; width: 20px; text-align: right; }
+  .sn-base       { color: var(--base); }
+  .sn-plus       { color: var(--plus); }
+  .sn-premium    { color: var(--premium); }
+  .sn-enterprise { color: var(--enterprise); }
+
+  .score-reasoning {
+    padding: 8px 14px 12px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.5;
+    min-height: 32px;
+  }
+  .score-reasoning .rec-highlight {
+    font-weight: 700;
+  }
+
+  /* Statement card */
+  .statement-card {
+    background: white;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .statement-parts { padding: 12px 14px; }
+  .sp {
+    margin-bottom: 10px;
+    opacity: 0.25;
+    transition: opacity 0.3s;
+  }
+  .sp.filled { opacity: 1; }
+  .sp:last-child { margin-bottom: 0; }
+  .sp-tag {
+    font-size: 9px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.8px;
+    color: var(--muted); margin-bottom: 3px;
+  }
+  .sp-text {
+    font-size: 12px; line-height: 1.5;
+    background: #F9FAFB;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    color: var(--text);
+    min-height: 34px;
+  }
+  .sp-text em { color: var(--ink-faint); font-style: italic; font-size: 11px; }
+  .sp-text strong { font-weight: 700; }
+  .sp-text .pkg-color { font-weight: 800; }
+
+  .reset-btn {
+    width: calc(100% - 28px);
+    margin: 0 14px 14px;
+    padding: 8px;
+    background: #F3F4F6;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .reset-btn:hover { background: #E5E7EB; color: var(--text); }
+
+  /* ── LOCK STATE ── */
+  .lock-panel {
+    padding: 16px 14px 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    text-align: center;
+  }
+  .lock-icon { font-size: 26px; opacity: 0.35; }
+  .lock-label {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+  .lock-label strong { color: var(--text); display: block; margin-bottom: 2px; font-size: 13px; }
+  .lock-input-row {
+    display: flex;
+    gap: 6px;
+    width: 100%;
+  }
+  .lock-input {
+    flex: 1;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-size: 12px;
+    color: var(--text);
+    outline: none;
+    font-family: inherit;
+    transition: border-color 0.15s;
+  }
+  .lock-input:focus { border-color: #9CA3AF; }
+  .lock-input.error { border-color: #EF4444; }
+  .lock-input::placeholder { color: #D1D5DB; }
+  .lock-submit {
+    background: var(--ink);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 7px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
+  .lock-submit:hover { background: #1A1B1D; }
+  .lock-error {
+    font-size: 11px;
+    color: #EF4444;
+    display: none;
+  }
+  .unlock-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-top: 1px solid var(--border);
+    font-size: 10.5px;
+    color: #059669;
+    font-weight: 600;
+  }
+
+  /* ════════════════════════════════════
+     REFERENCE TAB
+  ════════════════════════════════════ */
+  .ref-inner { max-width: 820px; margin: 0 auto; }
+  .ref-block {
+    background: white;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+  .ref-row {
+    display: flex; align-items: center;
+    padding: 9px 14px; border-bottom: 1px solid var(--border); gap: 10px;
+  }
+  .ref-row:last-child { border-bottom: none; }
+  .ref-row:hover { background: #FAFAFA; }
+  .ref-sig { flex: 1; font-size: 12.5px; }
+  .fd-tag {
+    display: inline-block; background: var(--accent); color: white;
+    font-size: 9px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.4px; padding: 1px 5px; border-radius: 3px; margin-left: 5px;
+  }
+  .ref-badges { display: flex; gap: 5px; flex-shrink: 0; }
+  .rb { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 4px; }
+  .rb-base       { background: var(--base-light);       color: var(--base);       border: 1px solid var(--base-mid); }
+  .rb-plus       { background: var(--plus-light);       color: var(--plus);       border: 1px solid var(--plus-mid); }
+  .rb-premium    { background: var(--premium-light);    color: var(--premium);    border: 1px solid var(--premium-mid); }
+  .rb-enterprise { background: var(--enterprise-light); color: var(--enterprise); border: 1px solid var(--enterprise-mid); }
+
+  .pkg-strip {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px;
+  }
+  .pkg-card { border-radius: 8px; padding: 12px 13px; border: 1.5px solid; }
+  .pkg-card.base       { border-color: var(--base-mid);       background: var(--base-light); }
+  .pkg-card.plus       { border-color: var(--plus-mid);       background: var(--plus-light); }
+  .pkg-card.premium    { border-color: var(--premium-mid);    background: var(--premium-light); }
+  .pkg-card.enterprise { border-color: var(--enterprise-mid); background: var(--enterprise-light); }
+  .pkg-card .pn { font-size: 14px; font-weight: 800; }
+  .base .pn { color: var(--base); } .plus .pn { color: var(--plus); }
+  .premium .pn { color: var(--premium); } .enterprise .pn { color: var(--enterprise); }
+  .pkg-card .pp { font-size: 18px; font-weight: 800; margin: 3px 0 5px; line-height: 1; }
+  .base .pp { color: var(--base); } .plus .pp { color: var(--plus); }
+  .premium .pp { color: var(--premium); } .enterprise .pp { color: var(--enterprise); }
+  .pkg-card .pt { font-size: 11px; color: var(--muted); font-style: italic; margin-bottom: 7px; line-height: 1.3; }
+  .pkg-card ul { list-style: none; }
+  .pkg-card ul li { font-size: 11px; line-height: 1.5; padding-left: 12px; position: relative; }
+  .pkg-card ul li::before { content: "•"; position: absolute; left: 0; color: var(--muted); }
+
+  .fd-panel {
+    background: var(--surface); border: 1px solid var(--accent-soft); border-left: 3px solid var(--accent);
+    border-radius: 8px; padding: 14px 16px; margin-bottom: 14px;
+  }
+  .fd-title { font-size: 14px; font-weight: 800; color: var(--accent-deep); margin-bottom: 5px; }
+  .fd-tagline { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .fd-body { font-size: 12px; color: var(--text); line-height: 1.5; margin-bottom: 8px; }
+  .fd-stat { background: var(--accent); color: white; border-radius: 5px; padding: 7px 10px;
+    font-size: 11.5px; font-weight: 600; line-height: 1.4; margin-bottom: 8px; display: inline-block; }
+  .fd-included { display: flex; gap: 5px; flex-wrap: wrap; }
+  .fi-badge { font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; }
+  .fi-badge.plus       { background: var(--plus-mid);       color: var(--plus); }
+  .fi-badge.premium    { background: var(--premium-mid);    color: var(--premium); }
+  .fi-badge.enterprise { background: var(--enterprise-mid); color: var(--enterprise); }
+
+  .section-label {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1px; color: var(--muted); margin-bottom: 8px;
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="page-header-brand">
+    <div class="page-header-icon" aria-hidden="true">
+      <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"
+           fill="none" stroke="currentColor" stroke-width="2.5"
+           stroke-linecap="round" stroke-linejoin="round">
+        <line x1="100" y1="36" x2="100" y2="172"/>
+        <path d="M 100 56 L 100 78 L 138 78 L 148 67 L 138 56 Z" fill="#FFFFFF"/>
+        <path d="M 100 88 L 100 110 L 62 110 L 52 99 L 62 88 Z" fill="#FFFFFF"/>
+        <rect x="68" y="96" width="26" height="6" rx="1" fill="#FFDD80" stroke="none"/>
+        <path d="M 100 120 L 100 142 L 132 142 L 142 131 L 132 120 Z" fill="#FFFFFF"/>
+        <line x1="78" y1="174" x2="122" y2="174" stroke-width="2"/>
+      </svg>
+    </div>
+    <div>
+      <h1>Package Routing Guide</h1>
+      <div class="sub">Thumbtack AE Reference &nbsp;·&nbsp; SMB Packages Only</div>
+    </div>
+  </div>
+  <div class="meta">Version 1.0 &nbsp;·&nbsp; June 2026<br>Use after discovery, before your recommendation</div>
+</div>
+
+<div class="tab-bar">
+  <div class="tab active" onclick="switchTab('builder')">⚡ Recommendation Builder</div>
+  <div class="tab" onclick="switchTab('reference')">📋 Routing Reference</div>
+</div>
+<div class="new-call-bar" id="new-call-bar">
+  <button id="new-call-btn" onclick="resetAll()">
+    <span class="dot"></span> New Call — Clear Selections
+  </button>
+</div>
+
+<!-- ══════════════════════════════
+     BUILDER TAB
+══════════════════════════════ -->
+<div id="tab-builder" class="panel active">
+  <div class="builder-layout">
+
+    <!-- LEFT: DIMENSIONS -->
+    <div id="dim-left">
+
+      <!-- D1 -->
+      <div class="dim-block" id="dim-1">
+        <div class="dim-header">
+          <div class="dim-num">1</div>
+          <div class="dim-name">Current Business State</div>
+          <div class="dim-q">How is the Pro's business performing right now?</div>
+        </div>
+        <div class="signal-btn-row">
+          <button class="sig-btn" onclick="pick(this,1)"
+            data-pkgs="base,plus"
+            data-why="Solo operators are still building their client base — Base or Plus gives them a foothold without overcommitting."
+            data-paraphrase="you're just getting started and building the business"
+            data-anchor="you mentioned you're still in the early days building your client base"
+            data-frame="getting a consistent flow of leads from day one">
+            <span class="sig-pkg-indicators"><span class="spi spi-base">Base</span><span class="spi spi-plus">Plus</span></span>
+            Solo / just starting out
+          </button>
+          <button class="sig-btn" onclick="pick(this,1)"
+            data-pkgs="plus,premium"
+            data-why="An established crew with a defined niche is past the starting-out phase — they need volume and the tools to scale it."
+            data-paraphrase="you've built a solid crew and have a clear focus on the type of work you want"
+            data-anchor="you said you have an established team and specific jobs you go after"
+            data-frame="scaling that focused operation with more of the right leads">
+            <span class="sig-pkg-indicators"><span class="spi spi-plus">Plus</span><span class="spi spi-premium">Premium</span></span>
+            Established crew, specific job focus
+          </button>
+          <button class="sig-btn" onclick="pick(this,1)"
+            data-pkgs="premium,enterprise"
+            data-why="Large operations need lead volume and support infrastructure that Base and Plus aren't built for."
+            data-paraphrase="you're running a large operation handling a range of different services"
+            data-anchor="you described a large team across multiple service types"
+            data-frame="managing lead volume at the scale your operation is actually running at">
+            <span class="sig-pkg-indicators"><span class="spi spi-premium">Premium</span><span class="spi spi-enterprise">Enterprise</span></span>
+            Large operation, diverse services
+          </button>
+        </div>
+        <div class="signal-reveal" id="reveal-1">
+          <div class="reveal-arrow">↳</div>
+          <div class="reveal-body">
+            <div class="reveal-pkg-row"><span class="rl">Points to:</span><span id="reveal-1-badges"></span></div>
+            <div class="reveal-why" id="reveal-1-why"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- D2 -->
+      <div class="dim-block" id="dim-2">
+        <div class="dim-header">
+          <div class="dim-num">2</div>
+          <div class="dim-name">Growth Blocker</div>
+          <div class="dim-q">What's preventing the Pro from growing?</div>
+        </div>
+        <div class="signal-btn-row">
+          <button class="sig-btn" onclick="pick(this,2)"
+            data-pkgs="base,plus"
+            data-why="The blocker is lead volume — they just need more coming in. Base or Plus directly addresses this."
+            data-paraphrase="you're not getting enough leads coming in consistently"
+            data-anchor="you said leads are the main thing holding growth back right now"
+            data-frame="getting a steady, predictable stream of new customers">
+            <span class="sig-pkg-indicators"><span class="spi spi-base">Base</span><span class="spi spi-plus">Plus</span></span>
+            Not enough leads coming in
+          </button>
+          <button class="sig-btn" onclick="pick(this,2)"
+            data-pkgs="plus,premium,enterprise"
+            data-why="Slow response is a conversion problem, not a lead problem. Front Desk — included in Plus, Premium, and Enterprise — is the direct solution."
+            data-paraphrase="you're losing jobs because you can't respond to leads fast enough"
+            data-anchor="you mentioned that by the time you see a lead, someone else has already responded"
+            data-frame="never missing that first-response window — the first Pro to respond usually wins the job">
+            <span class="sig-pkg-indicators"><span class="spi spi-plus">Plus</span><span class="spi spi-premium">Premium</span><span class="spi spi-enterprise">Enterprise</span></span>
+            Slow to respond / losing jobs to faster competitors
+          </button>
+          <button class="sig-btn" onclick="pick(this,2)"
+            data-pkgs="plus,premium"
+            data-why="Getting leads but wrong type means they need better targeting and support — that's a Plus/Premium conversation."
+            data-paraphrase="you're getting leads but they're not the right type of customer"
+            data-anchor="you said the leads coming in aren't a great fit for the work you actually want"
+            data-frame="attracting the specific type of jobs you want to be doing">
+            <span class="sig-pkg-indicators"><span class="spi spi-plus">Plus</span><span class="spi spi-premium">Premium</span></span>
+            Getting leads but wrong type of customer
+          </button>
+        </div>
+        <div class="signal-reveal" id="reveal-2">
+          <div class="reveal-arrow">↳</div>
+          <div class="reveal-body">
+            <div class="reveal-pkg-row"><span class="rl">Points to:</span><span id="reveal-2-badges"></span></div>
+            <div class="reveal-why" id="reveal-2-why"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- D3 -->
+      <div class="dim-block" id="dim-3">
+        <div class="dim-header">
+          <div class="dim-num">3</div>
+          <div class="dim-name">Definition of Success</div>
+          <div class="dim-q">What is the Pro trying to achieve?</div>
+        </div>
+        <div class="signal-btn-row">
+          <button class="sig-btn" onclick="pick(this,3)"
+            data-pkgs="plus,premium"
+            data-why="A modest growth goal is achievable with Plus or Premium — no need to push Enterprise when the target is measured."
+            data-paraphrase="your goal is steady growth — a few more jobs a week, done consistently"
+            data-anchor="you said 2 to 4 more jobs a week would make a real difference for you"
+            data-frame="hitting that consistent growth without overextending the operation">
+            <span class="sig-pkg-indicators"><span class="spi spi-plus">Plus</span><span class="spi spi-premium">Premium</span></span>
+            Modest goal — 2 to 4 more jobs per week
+          </button>
+          <button class="sig-btn" onclick="pick(this,3)"
+            data-pkgs="premium,enterprise"
+            data-why="5+ jobs per week requires the lead volume and support infrastructure that only Premium and Enterprise are built for."
+            data-paraphrase="you're going after significant growth — five or more jobs a week"
+            data-anchor="you said you want 5 or more jobs per week and you're ready to move"
+            data-frame="building the lead volume to actually support that level of growth">
+            <span class="sig-pkg-indicators"><span class="spi spi-premium">Premium</span><span class="spi spi-enterprise">Enterprise</span></span>
+            Aggressive goal — 5 or more jobs per week
+          </button>
+          <button class="sig-btn" onclick="pick(this,3)"
+            data-pkgs="enterprise"
+            data-why="Wanting to scale significantly means they've outgrown a one-size package. Enterprise's name-your-price structure is built for this conversation."
+            data-paraphrase="you're not thinking incremental — you want to scale the whole operation"
+            data-anchor="you said you want to grow significantly, not just a few more jobs a week"
+            data-frame="a customized partnership built around the scale you're actually going after">
+            <span class="sig-pkg-indicators"><span class="spi spi-enterprise">Enterprise</span></span>
+            Wants to scale significantly
+          </button>
+        </div>
+        <div class="signal-reveal" id="reveal-3">
+          <div class="reveal-arrow">↳</div>
+          <div class="reveal-body">
+            <div class="reveal-pkg-row"><span class="rl">Points to:</span><span id="reveal-3-badges"></span></div>
+            <div class="reveal-why" id="reveal-3-why"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- D4 -->
+      <div class="dim-block" id="dim-4">
+        <div class="dim-header">
+          <div class="dim-num">4</div>
+          <div class="dim-name">Lead Gen History &amp; Investment</div>
+          <div class="dim-q">What has the Pro tried? What have they spent?</div>
+        </div>
+        <div class="signal-btn-row">
+          <button class="sig-btn" onclick="pick(this,4)"
+            data-pkgs="base,plus"
+            data-why="No prior investment means paid lead gen is new for them — Base or Plus is the right entry point."
+            data-paraphrase="you haven't spent money on marketing — you've been running on word of mouth"
+            data-anchor="you mentioned you've been relying entirely on referrals, no paid lead gen"
+            data-frame="a low-risk first step into paid lead generation with a clear return">
+            <span class="sig-pkg-indicators"><span class="spi spi-base">Base</span><span class="spi spi-plus">Plus</span></span>
+            No marketing budget / word of mouth only
+          </button>
+          <button class="sig-btn" onclick="pick(this,4)"
+            data-pkgs="plus,premium"
+            data-why="Prior investment experience means they know what ROI looks like — Plus or Premium can show them something better."
+            data-paraphrase="you've invested in other platforms before — you know what you're looking for"
+            data-anchor="you said you've tried other platforms and know what good results look like"
+            data-frame="getting better results than what you've seen elsewhere">
+            <span class="sig-pkg-indicators"><span class="spi spi-plus">Plus</span><span class="spi spi-premium">Premium</span></span>
+            Has a budget, tried other platforms
+          </button>
+          <button class="sig-btn" onclick="pick(this,4)"
+            data-pkgs="premium,enterprise"
+            data-why="Tracking ROI closely means they'll evaluate this seriously. They need the support level and investment size to match how they operate."
+            data-paraphrase="you track your numbers closely — you need to see a clear return on any investment"
+            data-anchor="you said you measure ROI carefully and need to justify any spend"
+            data-frame="a level of support and investment you can actually track and defend">
+            <span class="sig-pkg-indicators"><span class="spi spi-premium">Premium</span><span class="spi spi-enterprise">Enterprise</span></span>
+            Tracks ROI, sophisticated marketer
+          </button>
+        </div>
+        <div class="signal-reveal" id="reveal-4">
+          <div class="reveal-arrow">↳</div>
+          <div class="reveal-body">
+            <div class="reveal-pkg-row"><span class="rl">Points to:</span><span id="reveal-4-badges"></span></div>
+            <div class="reveal-why" id="reveal-4-why"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- D5 -->
+      <div class="dim-block" id="dim-5">
+        <div class="dim-header">
+          <div class="dim-num">5</div>
+          <div class="dim-name">Decision Maker</div>
+          <div class="dim-q">Who makes the final call? Are they on this call?</div>
+        </div>
+        <div class="signal-btn-row">
+          <button class="sig-btn" onclick="pick(this,5)"
+            data-pkgs="clear"
+            data-why=""
+            data-paraphrase="" data-anchor="" data-frame="">
+            ✓ &nbsp;Decision maker is on this call — proceed to recommendation
+          </button>
+        </div>
+        <div class="gap-note-row">
+          ⚠️ <span>If the decision maker is <strong>not</strong> on the call, stop here. Close for a return call with them present before routing to a package.</span>
+        </div>
+        <div class="signal-reveal" id="reveal-5" style="background:#F0F9FF;border-color:#BAE6FD;">
+          <div class="reveal-arrow" style="color:#0284C7;">✓</div>
+          <div class="reveal-body">
+            <div class="reveal-why" id="reveal-5-why" style="color:#0C4A6E;">Decision maker confirmed. No routing impact — proceed through dimensions 1–4 and build your recommendation.</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /left -->
+
+    <!-- RIGHT PANEL -->
+    <div class="right-panel">
+
+      <!-- Signal log -->
+      <div class="signal-log-card">
+        <div class="card-header">
+          Signal log
+          <span style="font-weight:400;font-style:italic;text-transform:none;letter-spacing:0;">What you've heard → where it points</span>
+        </div>
+        <div class="log-entries" id="log-entries">
+          <div class="log-empty" id="log-empty">Select a signal to start building...</div>
+        </div>
+      </div>
+
+      <!-- Score -->
+      <div class="score-card">
+        <div class="card-header">Package score</div>
+        <div class="score-bars">
+          <div class="score-row">
+            <div class="score-label sl-base">Base</div>
+            <div class="score-track"><div class="score-fill sf-base" id="sf-base" style="width:0%"></div></div>
+            <div class="score-num sn-base" id="sn-base">0</div>
+          </div>
+          <div class="score-row">
+            <div class="score-label sl-plus">Plus</div>
+            <div class="score-track"><div class="score-fill sf-plus" id="sf-plus" style="width:0%"></div></div>
+            <div class="score-num sn-plus" id="sn-plus">0</div>
+          </div>
+          <div class="score-row">
+            <div class="score-label sl-premium">Premium</div>
+            <div class="score-track"><div class="score-fill sf-premium" id="sf-premium" style="width:0%"></div></div>
+            <div class="score-num sn-premium" id="sn-premium">0</div>
+          </div>
+          <div class="score-row">
+            <div class="score-label sl-enterprise">Enterprise</div>
+            <div class="score-track"><div class="score-fill sf-enterprise" id="sf-enterprise" style="width:0%"></div></div>
+            <div class="score-num sn-enterprise" id="sn-enterprise">0</div>
+          </div>
+        </div>
+        <div class="score-reasoning" id="score-reasoning">
+          <span style="color:#D1D5DB;font-style:italic;">Score updates as you select signals above</span>
+        </div>
+      </div>
+
+      <!-- Statement -->
+      <div class="statement-card">
+        <div class="card-header" id="statement-header">"Because You Said" draft</div>
+
+        <!-- LOCKED STATE -->
+        <div id="lock-panel" class="lock-panel">
+          <div class="lock-icon">🔒</div>
+          <div class="lock-label">
+            <strong>Advanced feature locked</strong>
+            Enter the unlock code from your facilitator to enable the "Because You Said" draft builder.
+          </div>
+          <div class="lock-input-row">
+            <input type="text" class="lock-input" id="lock-input" placeholder="Enter unlock code" autocomplete="off" />
+            <button class="lock-submit" onclick="tryUnlock()">Unlock</button>
+          </div>
+          <div class="lock-error" id="lock-error">Incorrect code. Try again.</div>
+        </div>
+
+        <!-- UNLOCKED STATE (hidden until code entered) -->
+        <div id="unlocked-panel" style="display:none;">
+          <div class="unlock-badge">✓ &nbsp;"Because You Said" builder unlocked</div>
+          <div class="statement-parts">
+            <div class="sp" id="sp-para">
+              <div class="sp-tag">1 — Paraphrase &amp; confirm</div>
+              <div class="sp-text" id="st-para"><em>Waiting for selections...</em></div>
+            </div>
+            <div class="sp" id="sp-anch">
+              <div class="sp-tag">2 — Anchor to what they said</div>
+              <div class="sp-text" id="st-anch"><em>Waiting for selections...</em></div>
+            </div>
+            <div class="sp" id="sp-frame">
+              <div class="sp-tag">3 — Frame the outcome</div>
+              <div class="sp-text" id="st-frame"><em>Waiting for selections...</em></div>
+            </div>
+            <div class="sp" id="sp-ask">
+              <div class="sp-tag">4 — Ask directly</div>
+              <div class="sp-text" id="st-ask"><em>Waiting for recommendation...</em></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div><!-- /right -->
+
+  </div>
+</div>
+
+<!-- ══════════════════════════
+     REFERENCE TAB
+══════════════════════════ -->
+<div id="tab-reference" class="panel">
+  <div class="ref-inner">
+    <div class="section-label" style="margin-bottom:10px;">Routing signals by discovery dimension</div>
+
+    <div class="ref-block">
+      <div class="dim-header"><div class="dim-num">1</div><div class="dim-name">Current Business State</div><div class="dim-q">How is the Pro's business performing right now?</div></div>
+      <div class="ref-row"><div class="ref-sig">Solo / just starting out</div><div class="ref-badges"><span class="rb rb-base">Base</span><span class="rb rb-plus">Plus</span></div></div>
+      <div class="ref-row"><div class="ref-sig">Established crew, specific job focus</div><div class="ref-badges"><span class="rb rb-plus">Plus</span><span class="rb rb-premium">Premium</span></div></div>
+      <div class="ref-row"><div class="ref-sig">Large operation, diverse services</div><div class="ref-badges"><span class="rb rb-premium">Premium</span><span class="rb rb-enterprise">Enterprise</span></div></div>
+    </div>
+
+    <div class="ref-block">
+      <div class="dim-header"><div class="dim-num">2</div><div class="dim-name">Growth Blocker</div><div class="dim-q">What's preventing the Pro from growing?</div></div>
+      <div class="ref-row"><div class="ref-sig">Not enough leads coming in</div><div class="ref-badges"><span class="rb rb-base">Base</span><span class="rb rb-plus">Plus</span></div></div>
+      <div class="ref-row"><div class="ref-sig">Slow to respond / losing jobs to faster competitors <span class="fd-tag">Front Desk</span></div><div class="ref-badges"><span class="rb rb-plus">Plus</span><span class="rb rb-premium">Premium</span><span class="rb rb-enterprise">Enterprise</span></div></div>
+      <div class="ref-row"><div class="ref-sig">Getting leads but wrong type of customer</div><div class="ref-badges"><span class="rb rb-plus">Plus</span><span class="rb rb-premium">Premium</span></div></div>
+    </div>
+
+    <div class="ref-block">
+      <div class="dim-header"><div class="dim-num">3</div><div class="dim-name">Definition of Success</div><div class="dim-q">What is the Pro trying to achieve?</div></div>
+      <div class="ref-row"><div class="ref-sig">Modest goal — 2 to 4 more jobs per week</div><div class="ref-badges"><span class="rb rb-plus">Plus</span><span class="rb rb-premium">Premium</span></div></div>
+      <div class="ref-row"><div class="ref-sig">Aggressive goal — 5 or more jobs per week</div><div class="ref-badges"><span class="rb rb-premium">Premium</span><span class="rb rb-enterprise">Enterprise</span></div></div>
+      <div class="ref-row"><div class="ref-sig">Wants to scale significantly</div><div class="ref-badges"><span class="rb rb-enterprise">Enterprise</span></div></div>
+    </div>
+
+    <div class="ref-block">
+      <div class="dim-header"><div class="dim-num">4</div><div class="dim-name">Lead Gen History &amp; Investment</div><div class="dim-q">What has the Pro tried? What have they spent?</div></div>
+      <div class="ref-row"><div class="ref-sig">No marketing budget / word of mouth only</div><div class="ref-badges"><span class="rb rb-base">Base</span><span class="rb rb-plus">Plus</span></div></div>
+      <div class="ref-row"><div class="ref-sig">Has a budget, tried other platforms</div><div class="ref-badges"><span class="rb rb-plus">Plus</span><span class="rb rb-premium">Premium</span></div></div>
+      <div class="ref-row"><div class="ref-sig">Tracks ROI, sophisticated marketer</div><div class="ref-badges"><span class="rb rb-premium">Premium</span><span class="rb rb-enterprise">Enterprise</span></div></div>
+    </div>
+
+    <div class="ref-block">
+      <div class="dim-header"><div class="dim-num">5</div><div class="dim-name">Decision Maker</div><div class="dim-q">Who makes the final call? Are they on this call?</div></div>
+      <div class="ref-row"><div class="ref-sig">Decision maker is on the call</div><div class="ref-badges"><span class="rb" style="background:#F3F4F6;color:#9CA3AF;border:1px solid #E5E7EB;">No routing impact</span></div></div>
+      <div class="ref-row" style="background:var(--surface);border-left:3px solid #D97706;"><div class="ref-sig" style="color:var(--ink-soft);">⚠️ Decision maker NOT on the call — close for a return call with them present before routing</div></div>
+    </div>
+
+    <div class="section-label" style="margin:18px 0 8px;">Package reference</div>
+    <div class="pkg-strip">
+      <div class="pkg-card base"><div class="pn">Base</div><div class="pp">$150</div><div class="pt">Starting out, limited budget</div><ul><li>Success Guide</li><li>Initial onboarding call</li><li>No Front Desk trial</li><li>Primary fallback</li></ul></div>
+      <div class="pkg-card plus"><div class="pn">Plus</div><div class="pp">$300</div><div class="pt">Solo or small team, ready to grow</div><ul><li>$50 earned lead credit</li><li>30-day Front Desk trial</li><li>30 days AE support</li></ul></div>
+      <div class="pkg-card premium"><div class="pn">Premium</div><div class="pp">$600</div><div class="pt">Established team, clear growth goals</div><ul><li>$100 earned lead credit</li><li>60-day Front Desk trial</li><li>30 days AE support</li></ul></div>
+      <div class="pkg-card enterprise"><div class="pn">Enterprise</div><div class="pp">$1,000+</div><div class="pt">Larger ambitions, custom deal</div><ul><li>$250 earned lead credit</li><li>90-day Front Desk trial</li><li>30 days AE support</li><li>Name-your-price</li></ul></div>
+    </div>
+
+    <div class="fd-panel">
+      <div class="fd-title">⚡ Front Desk</div>
+      <div class="fd-tagline">First to respond wins the job.</div>
+      <div class="fd-body">An auto-responder that sends the first message to a customer <strong>within 2 minutes</strong> of a new lead — 24/7, even when the Pro is on another job.</div>
+      <div class="fd-stat">After the free trial, Pros auto-enroll at $60/mo unless they cancel.</div>
+      <div class="fd-included">
+        <span class="fi-badge plus">Plus — 30 days free</span>
+        <span class="fi-badge premium">Premium — 60 days free</span>
+        <span class="fi-badge enterprise">Enterprise — 90 days free</span>
+      </div>
+    </div>
+
+    <div style="font-size:11px;color:var(--muted);border-top:1px solid var(--border);padding-top:10px;">
+      ⚠ Large Pro packages ($299 / $399 / $499) are out of scope. &nbsp;·&nbsp; Version 1.0 &nbsp;·&nbsp; June 2026
+    </div>
+  </div>
+</div>
+
+<script>
+  const PKG_ORDER  = ['base','plus','premium','enterprise'];
+  const PKG_COLORS = { base:'var(--base)', plus:'var(--plus)', premium:'var(--premium)', enterprise:'var(--enterprise)' };
+  const PKG_PRICES = { base:'$150', plus:'$300', premium:'$600', enterprise:'$1,000+' };
+  const PKG_NAMES  = { base:'Base', plus:'Plus', premium:'Premium', enterprise:'Enterprise' };
+
+  const REV_CLS = { base:'rev-base', plus:'rev-plus', premium:'rev-premium', enterprise:'rev-enterprise' };
+  const LP_CLS  = { base:'lp-base',  plus:'lp-plus',  premium:'lp-premium',  enterprise:'lp-enterprise' };
+
+  const state = {};  // dim -> { pkgs, paraphrase, anchor, frame, label }
+
+  function pick(btn, dim) {
+    // deselect siblings
+    btn.closest('.signal-btn-row').querySelectorAll('.sig-btn').forEach(b => {
+      b.classList.remove('selected');
+    });
+    btn.classList.add('selected');
+
+    const pkgsRaw = btn.dataset.pkgs;
+    const pkgs = pkgsRaw === 'clear' ? [] : pkgsRaw.split(',');
+
+    state[dim] = {
+      pkgs,
+      paraphrase: btn.dataset.paraphrase || '',
+      anchor:     btn.dataset.anchor     || '',
+      frame:      btn.dataset.frame      || '',
+      label:      btn.textContent.replace(/\s+/g,' ').trim(),
+      why:        btn.dataset.why        || ''
+    };
+
+    // show reveal
+    const rev = document.getElementById('reveal-' + dim);
+    rev.classList.add('visible');
+    if (dim < 5 && pkgs.length > 0) {
+      // build badges
+      const badgesEl = document.getElementById('reveal-' + dim + '-badges');
+      badgesEl.innerHTML = pkgs.map(p =>
+        `<span class="rev-badge ${REV_CLS[p]}" style="margin-right:4px;">${PKG_NAMES[p]}</span>`
+      ).join('');
+      document.getElementById('reveal-' + dim + '-why').textContent = btn.dataset.why;
+    }
+
+    // mark dim block
+    document.getElementById('dim-' + dim).classList.add('has-selection');
+
+
+    update();
+  }
+
+  function update() {
+    const counts = { base:0, plus:0, premium:0, enterprise:0 };
+    const logLines = [];
+
+    for (let d = 1; d <= 5; d++) {
+      if (!state[d]) continue;
+      if (state[d].pkgs.length > 0) {
+        state[d].pkgs.forEach(p => counts[p]++);
+        logLines.push({ dim: d, label: state[d].label, pkgs: state[d].pkgs });
+      } else if (d === 5) {
+        logLines.push({ dim: 5, label: 'Decision maker confirmed', pkgs: [] });
+      }
+    }
+
+    // update log
+    const logEl = document.getElementById('log-entries');
+    const logEmpty = document.getElementById('log-empty');
+    if (logLines.length === 0) {
+      logEmpty.style.display = 'block';
+      logEl.querySelectorAll('.log-entry').forEach(e => e.remove());
+    } else {
+      logEmpty.style.display = 'none';
+      logEl.querySelectorAll('.log-entry').forEach(e => e.remove());
+      logLines.forEach(line => {
+        const el = document.createElement('div');
+        el.className = 'log-entry';
+        const pkgHtml = line.pkgs.length > 0
+          ? line.pkgs.map(p => `<span class="lp ${LP_CLS[p]}">${PKG_NAMES[p]}</span>`).join('')
+          : `<span style="font-size:10px;color:#9CA3AF;font-style:italic;">no routing impact</span>`;
+        el.innerHTML = `
+          <div class="log-dim">${line.dim}</div>
+          <div class="log-text">${line.label}</div>
+          <div class="log-pkgs">${pkgHtml}</div>`;
+        logEl.appendChild(el);
+      });
+    }
+
+    // update score bars
+    const maxCount = Math.max(1, ...Object.values(counts));
+    PKG_ORDER.forEach(p => {
+      document.getElementById('sf-' + p).style.width = (counts[p] / maxCount * 100) + '%';
+      document.getElementById('sn-' + p).textContent = counts[p];
+    });
+
+    // determine recommendation
+    const total = Object.values(counts).reduce((a,b) => a+b, 0);
+    let rec = null;
+    if (total > 0) {
+      const topScore = Math.max(...Object.values(counts));
+      // prefer higher tier on tie
+      for (let i = PKG_ORDER.length - 1; i >= 0; i--) {
+        if (counts[PKG_ORDER[i]] === topScore) { rec = PKG_ORDER[i]; break; }
+      }
+    }
+
+    // score reasoning
+    const reasonEl = document.getElementById('score-reasoning');
+    if (rec) {
+      const recCount = counts[rec];
+      const dimCount = Object.values(state).filter(s => s && s.pkgs.length > 0).length;
+      reasonEl.innerHTML = `<span class="rec-highlight" style="color:${PKG_COLORS[rec]};">${PKG_NAMES[rec]}</span> appeared in ${recCount} of ${dimCount} dimension${dimCount!==1?'s':''} — that's your direction.`;
+    } else {
+      reasonEl.innerHTML = `<span style="color:#D1D5DB;font-style:italic;">Score updates as you select signals above</span>`;
+    }
+
+    // build statement — use first selection that includes the recommended package
+    let para = '', anch = '', frm = '';
+    for (let d = 1; d <= 4; d++) {
+      if (state[d] && rec && state[d].pkgs.includes(rec) && !para) {
+        para = state[d].paraphrase;
+        anch = state[d].anchor;
+        frm  = state[d].frame;
+      }
+    }
+
+    const anyDone = total > 0;
+
+    const fillPart = (partId, textId, content, fallback) => {
+      const part = document.getElementById(partId);
+      const txt  = document.getElementById(textId);
+      if (content) {
+        txt.innerHTML = content;
+        part.classList.add('filled');
+      } else {
+        txt.innerHTML = `<em>${fallback}</em>`;
+        part.classList.remove('filled');
+      }
+    };
+
+    if (unlocked) {
+      fillPart('sp-para', 'st-para',
+        para ? `"So it sounds like <strong>${para}</strong> — is that right?"` : '',
+        anyDone ? 'Select a signal pointing to your recommended package...' : 'Waiting for selections...'
+      );
+      fillPart('sp-anch', 'st-anch',
+        anch ? `"Because <strong>${anch}</strong>..."` : '',
+        anyDone ? 'Select a signal pointing to your recommended package...' : 'Waiting for selections...'
+      );
+      fillPart('sp-frame', 'st-frame',
+        frm ? `"...what that investment gets you is <strong>${frm}</strong>."` : '',
+        anyDone ? 'Select a signal pointing to your recommended package...' : 'Waiting for selections...'
+      );
+      fillPart('sp-ask', 'st-ask',
+        rec ? `"I'd like to get you started on <strong style="color:${PKG_COLORS[rec]};">${PKG_NAMES[rec]}</strong> — that's <strong>${PKG_PRICES[rec]}</strong> upfront. Let's get you set up."` : '',
+        'Waiting for recommendation...'
+      );
+    }
+  }
+
+  function resetAll() {
+    for (let d = 1; d <= 5; d++) {
+      delete state[d];
+      document.getElementById('dim-' + d).classList.remove('has-selection');
+      const rev = document.getElementById('reveal-' + d);
+      if (rev) rev.classList.remove('visible');
+      document.getElementById('dim-' + d).querySelectorAll('.sig-btn').forEach(b => b.classList.remove('selected'));
+    }
+    update();
+  }
+
+  // ── UNLOCK ──
+  const UNLOCK_CODE = 'because you said';
+  let unlocked = false; // Always start locked on page load — no persistence across sessions.
+
+  function normalizeCode(str) {
+    // Lowercase + collapse any run of whitespace to a single space + trim ends.
+    return str.toLowerCase().replace(/\s+/g, ' ').trim();
+  }
+
+  function applyUnlockState() {
+    if (unlocked) {
+      document.getElementById('lock-panel').style.display = 'none';
+      document.getElementById('unlocked-panel').style.display = 'block';
+    } else {
+      document.getElementById('lock-panel').style.display = 'flex';
+      document.getElementById('unlocked-panel').style.display = 'none';
+    }
+  }
+
+  function tryUnlock() {
+    const input = document.getElementById('lock-input');
+    const errEl = document.getElementById('lock-error');
+    if (normalizeCode(input.value) === normalizeCode(UNLOCK_CODE)) {
+      unlocked = true;
+      input.classList.remove('error');
+      errEl.style.display = 'none';
+      applyUnlockState();
+      update();
+    } else {
+      input.classList.add('error');
+      errEl.style.display = 'block';
+      input.value = '';
+    }
+  }
+
+  // allow Enter key in lock input
+  document.addEventListener('DOMContentLoaded', () => {
+    applyUnlockState();
+    const inp = document.getElementById('lock-input');
+    if (inp) inp.addEventListener('keydown', e => { if (e.key === 'Enter') tryUnlock(); });
+  });
+
+  function switchTab(name) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelector(`[onclick="switchTab('${name}')"]`).classList.add('active');
+    document.getElementById('tab-' + name).classList.add('active');
+  }
+</script>
+</body>
+</html>
