@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PreCog — Core Flow Walkthrough</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#EAF6FA; --surface:#FFFFFF;
+    --ink:#2F3033; --ink-soft:#4B5563; --ink-muted:#6B7280; --ink-faint:#9CA3AF;
+    --accent:#009FD9; --accent-deep:#007FAD; --accent-soft:#B2EBFF; --accent-bg:#EAF6FA;
+    --rule:#E5E7EB; --rule-soft:#F3F4F6;
+    --amber-bg:#FFF7E1; --amber-line:#FFDD80; --amber-ink:#714601;
+    --shadow-sm: rgba(0,0,0,0.04); --shadow-md: rgba(0,31,51,0.06);
+  }
+  *{box-sizing:border-box;}
+  html,body{background:var(--bg);margin:0;min-height:100vh;}
+  body{font-family:'Inter',system-ui,sans-serif;color:var(--ink);line-height:1.6;padding:40px 16px 80px;-webkit-font-smoothing:antialiased;}
+
+  .doc{max-width:880px;margin:0 auto;background:var(--surface);border-radius:14px;padding:48px 56px 56px;box-shadow:0 1px 2px var(--shadow-sm), 0 12px 32px var(--shadow-md);}
+
+  h1{font-size:30px;font-weight:700;color:var(--ink);letter-spacing:-0.02em;text-align:center;margin:0 0 8px;line-height:1.15;}
+  .sub{font-size:14.5px;color:var(--ink-soft);text-align:center;max-width:520px;margin:0 auto 28px;}
+
+  .progress-row{display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:34px;}
+  .dots{display:flex;gap:6px;}
+  .dots span{width:8px;height:8px;border-radius:50%;background:var(--rule);display:inline-block;}
+  .dots span.done{background:var(--accent-soft);}
+  .dots span.now{background:var(--accent);transform:scale(1.3);}
+  .step-count{font-size:11px;font-weight:600;color:var(--ink-muted);letter-spacing:0.05em;margin-left:8px;}
+
+  h2.step-title{font-size:20px;font-weight:700;color:var(--ink);text-align:center;margin:0 0 18px;letter-spacing:-0.01em;}
+
+  .stage-wrap{position:relative;max-width:720px;margin:0 auto;}
+
+  .stage{position:relative;background:#0d1424;border-radius:10px;overflow:hidden;line-height:0;box-shadow:0 1px 2px var(--shadow-sm), 0 8px 24px var(--shadow-md);}
+  .stage img{width:100%;display:block;}
+  .stage svg.overlay{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+  .hotspot{position:absolute;transform:translate(-50%,-50%);border:3px solid #ffffff;border-radius:50%;box-shadow:0 0 0 4px rgba(0,159,217,.55);cursor:pointer;animation:pulse 1.8s ease-in-out infinite;background:rgba(0,159,217,.18);}
+  .hotspot.rect{border-radius:8px;}
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 4px rgba(0,159,217,.55);}
+    50%{box-shadow:0 0 0 10px rgba(0,159,217,.15);}
+    100%{box-shadow:0 0 0 4px rgba(0,159,217,.55);}
+  }
+
+  .hotspot-label{position:absolute;background:var(--ink);color:#fff;font-size:0.72rem;font-weight:700;padding:6px 10px;border-radius:6px;white-space:normal;max-width:46%;line-height:1.35;text-align:center;pointer-events:none;box-shadow:0 2px 6px rgba(0,0,0,.25);}
+  .hotspot-label:after{content:"";position:absolute;border:5px solid transparent;}
+  .hotspot-label.flip-above:after{top:100%;border-top-color:var(--ink);}
+  .hotspot-label.flip-below:after{bottom:100%;border-bottom-color:var(--ink);}
+  .hotspot-label.align-center:after{left:50%;transform:translateX(-50%);}
+  .hotspot-label.align-left:after{left:14px;}
+  .hotspot-label.align-right:after{right:14px;}
+
+  .caption{margin:22px auto 0;max-width:720px;background:var(--accent-bg);border-radius:10px;padding:18px 22px;}
+  .caption p{margin:0;font-size:14.5px;line-height:1.65;color:var(--ink);}
+  .caption .meta{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;justify-content:center;}
+  .caption .meta span{font-size:11px;background:#fff;color:var(--accent-deep);padding:4px 10px;border-radius:20px;font-weight:600;border:1px solid var(--accent-soft);}
+
+  .controls{display:none;justify-content:center;align-items:center;margin-top:22px;gap:10px;}
+  .controls.show{display:flex;}
+  button.nav-btn{font-family:inherit;font-size:13.5px;font-weight:600;padding:10px 20px;border-radius:8px;border:1px solid var(--rule);background:transparent;color:var(--ink-soft);cursor:pointer;}
+  button.nav-btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 1px 2px rgba(0,159,217,.25);}
+  button.nav-btn:disabled{opacity:0.35;cursor:not-allowed;}
+  button.nav-btn:not(:disabled):hover{filter:brightness(0.97);}
+
+  .modal-backdrop{position:fixed;inset:0;background:rgba(47,48,51,.55);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px;}
+  .modal-backdrop.hidden{display:none;}
+  .modal-card{background:#fff;border-radius:14px;padding:36px 38px;max-width:440px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.25);}
+  .modal-card h3{margin:0 0 14px;font-size:20px;font-weight:700;color:var(--ink);letter-spacing:-0.01em;}
+  .modal-card p{font-size:14.5px;color:var(--ink-soft);line-height:1.6;margin:0 0 12px;}
+  .modal-card .modal-note{background:var(--accent-bg);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--accent-deep);font-weight:600;margin-bottom:20px;}
+  .modal-card button{margin-top:2px;}
+
+  @media (max-width:720px){
+    .doc{padding:32px 22px 40px;}
+    h1{font-size:24px;}
+    .hotspot-label{max-width:62%;}
+  }
+</style>
+</head>
+<body>
+
+<div class="doc">
+  <h1>Running PreCog: the core flow</h1>
+  <p class="sub">Click the highlighted spot on each screenshot to move to the next step.</p>
+
+  <div class="progress-row">
+    <div class="dots" id="dots"></div>
+    <span class="step-count" id="stepCount"></span>
+  </div>
+
+  <h2 class="step-title" id="stepTitle"></h2>
+
+  <div class="stage-wrap">
+    <div id="stageArea"></div>
+  </div>
+
+  <div class="caption">
+    <p id="stepBody"></p>
+    <div class="meta" id="stepMeta"></div>
+  </div>
+
+  <div class="controls" id="controls">
+    <button class="nav-btn" id="prevBtn">&larr; Back</button>
+    <button class="nav-btn primary" id="nextBtn">Next &rarr;</button>
+  </div>
+</div>
+
+<div class="modal-backdrop hidden" id="modalBackdrop">
+  <div class="modal-card">
+    <h3>Nice work — that's the core flow.</h3>
+    <p>PreCog does the heavy lifting: you choose which incidents to run, let it work without interrupting it, and pick up right where it left off in Salesforce.</p>
+    <div class="modal-note">You can now go back and revisit any step using the buttons below.</div>
+    <button class="nav-btn primary" id="modalCloseBtn">Got it</button>
+  </div>
+</div>
+
+<script>
+const steps = [
+  {
+    title:"Open PreCog from the puzzle-piece icon",
+    image:"img/01-toolbar.png",
+    hotspot:{shape:"circle", x:91.2, y:9.8, r:2.0},
+    label:"Click the puzzle-piece icon",
+    body:"Click the puzzle-piece (Extensions) icon in your browser toolbar. A dropdown will list your installed extensions — click Thumbtack PreCog to open the panel on the right side of your screen.",
+    meta:["Step 1 of 8"]
+  },
+  {
+    title:"Filter to “My Open Incidents”",
+    image:"img/02-filter-dropdown.png",
+    hotspot:{shape:"circle", x:9, y:36.5, r:3.8},
+    label:"Click My Open Incidents",
+    body:"Make sure you're on the MI Incidents tab, then open the list view dropdown (top left) and choose B1: My Open Incidents. This shows only the open incidents assigned to you.",
+    meta:["Step 2 of 8"]
+  },
+  {
+    title:"Select the incidents to investigate",
+    image:"img/03-checkboxes.png",
+    hotspot:{shape:"rect", x:2.3, y:52, w:3.2, h:48},
+    label:"Check the incidents to run",
+    body:"Check the box next to each incident you want PreCog to investigate. PreCog is capped at 30 incidents per run — if you have more open than that, run it in batches.",
+    meta:["Step 3 of 8"]
+  },
+  {
+    title:"Investigate Selected or Investigate All",
+    image:"img/04-investigate-buttons.png",
+    hotspot:{shape:"rect", x:79, y:30, w:38, h:12},
+    label:"Click to run PreCog",
+    body:"In the PreCog panel on the right, click Investigate Selected Incidents to run only what you checked, or Investigate All Incidents to run everything currently in your list view.",
+    meta:["Step 4 of 8"]
+  },
+  {
+    title:"Log into Admin if you're prompted",
+    image:"img/05-admin-login.png",
+    hotspot:{shape:"circle", x:32, y:51, r:4.5},
+    label:"Click Sign in with Okta",
+    body:"If you've been logged out of Admin, PreCog pauses here so you can sign back in. Once you do, it picks up automatically — no need to restart the run.",
+    meta:["Step 5 of 8"]
+  },
+  {
+    title:"Let PreCog run — this is normal",
+    image:"img/06-freeze-banner.png",
+    hotspot:{shape:"rect", x:50, y:16, w:100, h:3.5},
+    label:"This banner means it's working — click to continue",
+    body:"Tabs and windows will open and close on their own, and you won't be able to click around in that browser tab. That's PreCog pulling data — not a bug. For about 15 incidents, expect roughly 3–4 minutes; it varies with incident count and complexity.",
+    meta:["Step 6 of 8"]
+  },
+  {
+    title:"Watch progress in your original window",
+    image:"img/07-progress.png",
+    hotspot:{shape:"rect", x:69, y:45, w:18, h:46},
+    label:"Live status updates here",
+    body:"Go back to the window you started the run from. Each incident's investigation status updates there in real time, even while other tabs are opening and closing elsewhere.",
+    meta:["Step 7 of 8"]
+  },
+  {
+    title:"Open a finished incident with one click",
+    image:"img/04-investigate-buttons.png",
+    hotspot:{shape:"rect", x:78.5, y:62.5, w:41, h:10.5},
+    label:"Click this row (MI-269850)",
+    body:"Once an incident is done, click it (or its View Details link) in the PreCog panel. It opens the full investigation report and jumps you straight to that incident in Salesforce.",
+    meta:["Step 8 of 8"]
+  }
+];
+
+let current = 0;
+let completed = false;
+
+function buildDots(){
+  const d = document.getElementById('dots');
+  d.innerHTML = "";
+  steps.forEach((s,i)=>{
+    const sp = document.createElement('span');
+    if(i<current) sp.className='done';
+    if(i===current) sp.className='now';
+    d.appendChild(sp);
+  });
+}
+
+function positionLabel(lbl, h){
+  const halfW = h.shape==='circle' ? h.r : h.w/2;
+  const halfH = h.shape==='circle' ? h.r : h.h/2;
+  const leftEdge = h.x - halfW;
+  const rightEdge = h.x + halfW;
+  const topEdge = h.y - halfH;
+
+  let hAlign, leftPos, translateX;
+  if(leftEdge < 18){ hAlign='left'; leftPos = Math.max(1, leftEdge); translateX='0%'; }
+  else if(rightEdge > 82){ hAlign='right'; leftPos = Math.min(99, rightEdge); translateX='-100%'; }
+  else { hAlign='center'; leftPos = h.x; translateX='-50%'; }
+
+  let vAlign, topPos, translateY;
+  if(topEdge < 12){ vAlign='below'; topPos = h.y + halfH + 2; translateY='0%'; }
+  else { vAlign='above'; topPos = topEdge - 2; translateY='-100%'; }
+
+  lbl.style.left = leftPos+'%';
+  lbl.style.top = topPos+'%';
+  lbl.style.transform = `translate(${translateX}, ${translateY})`;
+  lbl.classList.add('align-'+hAlign, vAlign==='below' ? 'flip-below' : 'flip-above');
+}
+
+function render(){
+  const s = steps[current];
+  document.getElementById('stepCount').textContent = (current+1)+' / '+steps.length;
+  document.getElementById('stepTitle').textContent = (current+1)+'. '+s.title;
+  document.getElementById('stepBody').textContent = s.body;
+
+  const meta = document.getElementById('stepMeta');
+  meta.innerHTML = "";
+  (s.meta||[]).forEach(m=>{
+    const sp = document.createElement('span');
+    sp.textContent = m;
+    meta.appendChild(sp);
+  });
+
+  const stage = document.getElementById('stageArea');
+  stage.innerHTML = "";
+
+  const wrap = document.createElement('div');
+  wrap.className = 'stage';
+  const img = document.createElement('img');
+  img.src = s.image;
+  img.alt = s.title;
+  wrap.appendChild(img);
+
+  if(s.hotspot){
+    const h = s.hotspot;
+    const svgNS = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(svgNS,"svg");
+    svg.setAttribute("class","overlay");
+    svg.setAttribute("viewBox","0 0 100 100");
+    svg.setAttribute("preserveAspectRatio","none");
+    const defs = document.createElementNS(svgNS,"defs");
+    const mask = document.createElementNS(svgNS,"mask");
+    mask.setAttribute("id","spot"+current);
+    const fullRect = document.createElementNS(svgNS,"rect");
+    fullRect.setAttribute("width","100"); fullRect.setAttribute("height","100"); fullRect.setAttribute("fill","white");
+    mask.appendChild(fullRect);
+    let cut;
+    if(h.shape==="circle"){
+      cut = document.createElementNS(svgNS,"circle");
+      cut.setAttribute("cx",h.x); cut.setAttribute("cy",h.y); cut.setAttribute("r",h.r);
+    } else {
+      cut = document.createElementNS(svgNS,"rect");
+      cut.setAttribute("x",h.x-h.w/2); cut.setAttribute("y",h.y-h.h/2);
+      cut.setAttribute("width",h.w); cut.setAttribute("height",h.h); cut.setAttribute("rx","1.5");
+    }
+    cut.setAttribute("fill","black");
+    mask.appendChild(cut);
+    defs.appendChild(mask);
+    svg.appendChild(defs);
+    const dim = document.createElementNS(svgNS,"rect");
+    dim.setAttribute("width","100"); dim.setAttribute("height","100");
+    dim.setAttribute("fill","black"); dim.setAttribute("opacity","0.55");
+    dim.setAttribute("mask","url(#spot"+current+")");
+    svg.appendChild(dim);
+    wrap.appendChild(svg);
+
+    const dot = document.createElement('div');
+    dot.className = 'hotspot' + (h.shape==='rect' ? ' rect' : '');
+    dot.style.left = h.x+'%';
+    dot.style.top = h.y+'%';
+    dot.style.width = (h.shape==='circle' ? h.r*2 : h.w) + '%';
+    dot.style.height = (h.shape==='circle' ? h.r*2 : h.h) + '%';
+    dot.title = "Click to continue";
+    dot.onclick = advance;
+    wrap.appendChild(dot);
+
+    if(s.label){
+      const lbl = document.createElement('div');
+      lbl.className = 'hotspot-label';
+      lbl.textContent = s.label;
+      wrap.appendChild(lbl);
+      positionLabel(lbl, h);
+    }
+  }
+  stage.appendChild(wrap);
+
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  prevBtn.disabled = current===0;
+  nextBtn.disabled = current===steps.length-1;
+
+  buildDots();
+}
+
+function go(i){
+  if(i<0 || i>=steps.length) return;
+  current = i;
+  render();
+}
+function advance(){
+  if(current<steps.length-1){ go(current+1); }
+  else if(!completed){ showCompletion(); }
+}
+function next(){ if(current<steps.length-1) go(current+1); }
+function prev(){ if(current>0) go(current-1); }
+
+function showCompletion(){
+  completed = true;
+  document.getElementById('modalBackdrop').classList.remove('hidden');
+}
+function closeModal(){
+  document.getElementById('modalBackdrop').classList.add('hidden');
+  document.getElementById('controls').classList.add('show');
+}
+
+document.getElementById('modalCloseBtn').onclick = closeModal;
+document.getElementById('nextBtn').onclick = next;
+document.getElementById('prevBtn').onclick = prev;
+document.addEventListener('keydown',(e)=>{
+  if(!completed) return;
+  if(e.key==='ArrowRight') next();
+  if(e.key==='ArrowLeft') prev();
+});
+
+render();
+</script>
+
+</body>
+</html>
