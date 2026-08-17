@@ -108,7 +108,9 @@
   .rev-enterprise { background: var(--enterprise-light); color: var(--enterprise); border: 1.5px solid var(--enterprise-mid); }
   .reveal-why { font-size: 11.5px; color: var(--ink-soft); line-height: 1.4; }
 
-  .rb-nudge { margin: 6px 14px 12px; font-size: 12px; color: #B45F06; background: #FFF4E8; border: 1px solid #F3D9A8; border-radius: 8px; padding: 8px 12px; }
+  /* Distinct from .feedback.incorrect (#FFF4E8) — the routing builder can show a nudge
+     and a step feedback block at the same time, so the two must not read as one surface. */
+  .rb-nudge { margin: 6px 14px 12px; font-size: 12px; color: #7A4A0A; background: var(--surface); border: 1px solid #E8B87A; border-left: 3px solid #B45F06; border-radius: 8px; padding: 8px 12px; }
 
   .rb-score-card { background: white; border: 1.5px solid var(--rule); border-radius: 10px; overflow: hidden; margin-top: 14px; }
   .rb-card-header { background: #F9FAFB; border-bottom: 1px solid var(--rule); padding: 10px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--ink-muted); }
@@ -441,8 +443,27 @@
   }
   .choice-btn:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-soft); }
   .choice-btn:disabled { cursor: default; }
-  .choice-btn.correct { border-color: #2E7D32; background: #EEF7EF; }
-  .choice-btn.incorrect { border-color: #B45F06; background: #FFF4E8; }
+  /* Once answered, fade the options never tried so the correct one still reads as
+     the answer rather than just another white box. */
+  .choice-btn:disabled:not(.correct):not(.incorrect) { opacity: .55; }
+  /* Option states must stay visually distinct from the feedback blocks below them.
+     Never reuse a feedback background hex here — the two read as one block if you do. */
+  .choice-btn.correct {
+    border-color: #2E7D32;
+    background: var(--surface);
+    box-shadow: inset 4px 0 0 #2E7D32;
+    font-weight: 600;
+  }
+  /* Eliminated: struck through and muted, but text must stay legible — the learner is
+     meant to compare it against the correct answer. --ink-muted clears WCAG AA on white. */
+  .choice-btn.incorrect {
+    border-color: #D1D5DB;
+    background: var(--surface);
+    color: var(--ink-muted);
+    text-decoration: line-through;
+    text-decoration-color: #B45F06;
+    text-decoration-thickness: 1.5px;
+  }
 
   .feedback {
     font-size: 14.5px;
@@ -469,6 +490,10 @@
     transition: background .15s ease;
   }
   .next-btn:hover { background: var(--accent-deep); }
+  /* Locked state, used while a step is waiting on a correct answer. Must read as
+     clearly inert — a live-looking dead button is worse than no button at all. */
+  .next-btn:disabled,
+  .next-btn:disabled:hover { background: var(--rule); color: var(--ink-muted); cursor: default; }
 
 
   .review-tag {
@@ -1154,6 +1179,23 @@
 
   // ---------- Shared helpers ----------
 
+  /* Program-wide wrong-answer recovery standard.
+     Every incorrect feedback string in a retry-style activity ends with this exact
+     sentence, and the locked-continue button below it shows the learner that the
+     activity is waiting on them rather than finished. Do not reword per screen —
+     the consistency is the point. */
+  var RECOVERY_LINE = 'Select a different answer.';
+
+  /* The locked button says why it is locked rather than repeating the step's own
+     label — a greyed button still reading "Continue" competes with Compass's own
+     Continue control for meaning, which is the confusion this fixes. */
+  var LOCKED_CONTINUE_LABEL = 'Answer correctly to continue';
+
+  function incorrectFeedbackHtml(diagnostic) {
+    return '<div class="feedback incorrect">' + diagnostic + ' <strong>' + RECOVERY_LINE + '</strong></div>' +
+      '<div class="nav-row"><button class="next-btn" disabled>' + LOCKED_CONTINUE_LABEL + '</button></div>';
+  }
+
   function choiceBtn(key, label, already, correctKeys) {
     var cls = 'choice-btn';
     var disabled = '';
@@ -1324,7 +1366,9 @@
         var choice = cfg.choices.filter(function (c) { return c.key === key; })[0];
         if (!choice.correct) {
           btn.classList.add('incorrect');
-          document.getElementById('cs-feedback').innerHTML = '<div class="feedback incorrect">' + choice.feedback + '</div>';
+          btn.disabled = true;
+          document.getElementById('cs-feedback').innerHTML =
+            incorrectFeedbackHtml(choice.feedback);
           return;
         }
         document.querySelectorAll('#cs-choices .choice-btn').forEach(function (b) { b.disabled = true; });
@@ -1536,8 +1580,11 @@
             rb.answered[di] = oi;
             renderAll();
           } else {
+            /* Retry-style path, so it carries the same recovery standard as the
+               choice steps: the nudge always ends by naming the next action. */
             var nudgeSlot = document.getElementById('rb-nudge-' + di);
-            if (nudgeSlot) nudgeSlot.innerHTML = '<div class="rb-nudge">' + getNudge(proKey, di, oi) + '</div>';
+            if (nudgeSlot) nudgeSlot.innerHTML = '<div class="rb-nudge">' + getNudge(proKey, di, oi) +
+              ' <strong>' + RECOVERY_LINE + '</strong></div>';
           }
         };
       });
@@ -1595,7 +1642,7 @@
       prompt: 'Paraphrase Maria’s situation, then hold for her response.',
       choices: [
         { key: 'correct', label: "So your regular clients are steady, but new client flow has slowed — and what you'd really want is two or three new recurring clients a month, not one-off jobs.", correct: true, feedback: 'Maria: "Yeah, that’s exactly it." That’s a paraphrase — her situation, in your words, held for her response. She confirmed it. Anchor to it with confidence.' },
-        { key: 'generic', label: "So you're looking to grow your business and reach more people.", correct: false, feedback: 'This could describe almost any Pro. Try again with what she actually said.' },
+        { key: 'generic', label: "So you're looking to grow your business and reach more people.", correct: false, feedback: 'This could describe almost any Pro — it is not anchored to anything she actually said.' },
         { key: 'invented', label: "So it sounds like you're ready to bring on a part-time employee soon, and maybe even think about opening a second location down the road to keep up with everything.", correct: false, feedback: 'Slow down — she never said anything about hiring soon or a second location. That’s an inference, not a paraphrase. Stick to what she actually told you.' }
       ],
       continueLabel: 'Continue to Anchor →',
@@ -1687,7 +1734,8 @@
         var fb = document.getElementById('rosa1-feedback');
         if (key === 'vague') {
           btn.classList.add('incorrect');
-          fb.innerHTML = '<div class="feedback incorrect">True, but says nothing specific enough to show you were listening. Try again.</div>';
+          btn.disabled = true;
+          fb.innerHTML = incorrectFeedbackHtml('True, but says nothing specific enough to show you were listening.');
           return;
         }
         document.querySelectorAll('#rosa1-choices .choice-btn').forEach(function (b) { b.disabled = true; });
@@ -1777,7 +1825,7 @@
       title: 'Which is the direct ask?',
       extraHtml: extra,
       choices: [
-        { key: 'hedge', label: "This could be a good option if you're ready to think about it.", correct: false, feedback: 'This hedges — no product named, no direct ask. Try another option.' },
+        { key: 'hedge', label: "This could be a good option if you're ready to think about it.", correct: false, feedback: 'This hedges — no product named, no direct ask.' },
         { key: 'ask', label: "Based on what you told me, Premium's the right fit — let's get you started.", correct: true, feedback: 'Direct, names the product, no qualifiers.' },
         { key: 'rambly', label: "Premium really could be such a great fit for where you're headed, and I think you're going to be thrilled with everything it unlocks for your business long-term!", correct: false, feedback: 'This is enthusiastic, but it never actually asks for anything — no clear next step, no close. Enthusiasm isn’t the same as a direct ask.' }
       ],
