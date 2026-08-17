@@ -180,8 +180,30 @@
   }
   .choice-btn:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-soft); }
   .choice-btn:disabled { cursor: default; }
-  .choice-btn.correct { border-color: #2E7D32; background: #EEF7EF; }
-  .choice-btn.incorrect { border-color: #B45F06; background: #FFF4E8; }
+  /* Once answered, fade the options never tried so the correct one still reads as
+     the answer rather than just another white box. */
+  .choice-btn:disabled:not(.correct):not(.incorrect):not(.picked) { opacity: .55; }
+  /* Step 1 has no wrong answer — either pick leads to the same teaching beat. Mark
+     the learner's choice neutrally; never strike it through. */
+  .choice-btn.picked { border-color: var(--ink-muted); box-shadow: inset 4px 0 0 var(--ink-muted); }
+  /* Option states must stay visually distinct from the feedback blocks below them.
+     Never reuse a feedback background hex here — the two read as one block if you do. */
+  .choice-btn.correct {
+    border-color: #2E7D32;
+    background: var(--surface);
+    box-shadow: inset 4px 0 0 #2E7D32;
+    font-weight: 600;
+  }
+  /* Eliminated: struck through and muted, but text must stay legible — the learner is
+     meant to compare it against the correct answer. --ink-muted clears WCAG AA on white. */
+  .choice-btn.incorrect {
+    border-color: #D1D5DB;
+    background: var(--surface);
+    color: var(--ink-muted);
+    text-decoration: line-through;
+    text-decoration-color: #B45F06;
+    text-decoration-thickness: 1.5px;
+  }
 
   .feedback {
     font-size: 14.5px;
@@ -191,6 +213,8 @@
     margin: 4px 0 18px;
   }
   .feedback.correct { background: #EEF7EF; color: #1E4620; border: 1px solid #BFE3C4; }
+  /* Markdown asterisks do not render through innerHTML — use real emphasis. */
+  .feedback em { font-style: italic; }
   .feedback.incorrect { background: #FFF4E8; color: #714601; border: 1px solid #F3D9A8; }
 
   .package-flag {
@@ -520,6 +544,13 @@
     if (already) {
       disabled = 'disabled';
       if (key === already.key) cls += already.correct ? ' correct' : ' incorrect';
+      // Step 1 is a teaching beat with no wrong answer: on review, always show the
+      // intended read as correct and the learner's differing pick as merely picked.
+      if (already.step === 1) {
+        cls = 'choice-btn';
+        if (key === 'learned') cls += ' correct';
+        else if (key === already.key) cls += ' picked';
+      }
     }
     return `<button class="${cls}" data-key="${key}" ${disabled}>${label}</button>`;
   }
@@ -534,10 +565,13 @@
       btn.onclick = () => {
         const key = btn.dataset.key;
         const correct = key === 'learned';
-        state.picks[1] = { key, correct };
+        state.picks[1] = { key, correct, step: 1 };
         document.querySelectorAll('#s1-choices .choice-btn').forEach(b => {
           b.disabled = true;
-          if (b.dataset.key === key) b.classList.add(correct ? 'correct' : 'incorrect');
+          // Always reveal the intended read, and mark the learner's own pick neutrally
+          // if it differed. This step teaches rather than tests — nothing is "wrong".
+          if (b.dataset.key === 'learned') b.classList.add('correct');
+          else if (b.dataset.key === key) b.classList.add('picked');
         });
         showStep1Feedback(feedbackEl, correct);
       };
@@ -574,9 +608,28 @@
     wireStep2Choices(already);
   }
 
+  /* Program-wide wrong-answer recovery standard.
+     Every incorrect feedback string in a retry-style activity ends with this exact
+     sentence, and the locked-continue button below it shows the learner that the
+     activity is waiting on them rather than finished. Do not reword per screen —
+     the consistency is the point. */
+  const RECOVERY_LINE = 'Select a different answer.';
+
+  /* The locked button says why it is locked rather than repeating the step's own
+     label — a greyed button still reading "Continue to Frame" competes with Compass's
+     own Continue control for meaning, which is the confusion this fixes. */
+  const LOCKED_CONTINUE_LABEL = 'Answer correctly to continue';
+
+  function incorrectFeedbackHtml(diagnostic) {
+    return `
+      <div class="feedback incorrect">${diagnostic} <strong>${RECOVERY_LINE}</strong></div>
+      <div class="nav-row"><button class="next-btn" disabled>${LOCKED_CONTINUE_LABEL}</button></div>
+    `;
+  }
+
   const S2_INCORRECT_FEEDBACK = {
-    generic: "Not this one — that line could apply to any painting business. It's not anchored to anything Rosa actually said. Try again.",
-    'true-not-relevant': "That's true — she did say that — but it's not what's driving this recommendation. An anchor has to be the specific detail that explains why *this* package, not just any real fact about her business. Try again."
+    generic: "Not this one — that line could apply to any painting business. It's not anchored to anything Rosa actually said.",
+    'true-not-relevant': "That's true — she did say that — but it's not what's driving this recommendation. An anchor has to be the specific detail that explains why <em>this</em> package, not just any real fact about her business."
   };
 
   function wireStep2Choices(already) {
@@ -588,7 +641,8 @@
         const correct = key === 'anchor';
         if (!correct) {
           btn.classList.add('incorrect');
-          feedbackEl.innerHTML = `<div class="feedback incorrect">${S2_INCORRECT_FEEDBACK[key]}</div>`;
+          btn.disabled = true;
+          feedbackEl.innerHTML = incorrectFeedbackHtml(S2_INCORRECT_FEEDBACK[key]);
           return;
         }
         state.picks[2] = { key, correct: true };
@@ -639,7 +693,8 @@
         const correct = key === 'outcome';
         if (!correct) {
           btn.classList.add('incorrect');
-          feedbackEl.innerHTML = `<div class="feedback incorrect">Accurate, but backwards. Leading with the price before the Pro knows what it buys them turns the recommendation into a transaction. Try the other option.</div>`;
+          btn.disabled = true;
+          feedbackEl.innerHTML = incorrectFeedbackHtml('Accurate, but backwards. Leading with the price before the Pro knows what it buys them turns the recommendation into a transaction.');
           return;
         }
         state.picks[3] = { key, correct: true };
@@ -687,7 +742,8 @@
         const correct = key === 'ask';
         if (!correct) {
           btn.classList.add('incorrect');
-          feedbackEl.innerHTML = `<div class="feedback incorrect">"I think," "maybe," and "if you're interested" are all automatic misses, no matter how good the anchor and frame were. Try the other option.</div>`;
+          btn.disabled = true;
+          feedbackEl.innerHTML = incorrectFeedbackHtml('"I think," "maybe," and "if you\'re interested" are all automatic misses, no matter how good the anchor and frame were.');
           return;
         }
         state.picks[4] = { key, correct: true };
